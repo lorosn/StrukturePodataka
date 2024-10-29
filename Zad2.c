@@ -51,22 +51,6 @@ int prepend_list(position head, char* fname, char* lname, int birth_year) {
     return EXIT_SUCCESS;
 }
 
-int insert_after(position previous, char* fname, char* lname, int birth_year) {
-    if (!previous) {
-        return -1; // Ako prethodni čvor nije validan
-    }
-
-    position new_person = create_person(fname, lname, birth_year);
-    if (!new_person) {
-        return -1; // Ako nije moguće alocirati memoriju
-    }
-
-    new_person->next = previous->next;
-    previous->next = new_person;
-
-    return EXIT_SUCCESS;
-}
-
 int print_list(position first) {
     position temp = first->next;
     while (temp) {
