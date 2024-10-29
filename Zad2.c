@@ -7,23 +7,26 @@
 typedef struct _person* position;
 
 typedef struct _person {
-	char fname[32], lname[32];
-	int birth_year;
-	position next;
+    char fname[32], lname[32];
+    int birth_year;
+    position next;
 } person;
 
 position create_person(char* fname, char* lname, int birth_year);
 int prepend_list(position head, char* fname, char* lname, int birth_year);
 int insert_after(position previous, position to_insert);
+int insert_before(position head, position to_insert, char* lname);
 int append_list(position head, char* fname, char* lname, int birth_year);
 int print_list(position first);
 position find_last(position head);
 position find_by_lastname(position head, char* lname);
 int delete_by_lastname(position head, char* lname);
+void sort_list(position head);
+int write_to_file(position head, const char* filename);
+position read_from_file(const char* filename);
 
 position create_person(char* fname, char* lname, int birth_year) {
-    position new_person = NULL;
-    new_person = (position)malloc(sizeof(person));
+    position new_person = (position)malloc(sizeof(person));
     if (!new_person) {
         printf("Malloc failed in function create_person!\n");
         return NULL;
@@ -38,9 +41,7 @@ position create_person(char* fname, char* lname, int birth_year) {
 }
 
 int prepend_list(position head, char* fname, char* lname, int birth_year) {
-    position new_person = NULL;
-    new_person = create_person(fname, lname, birth_year);
-
+    position new_person = create_person(fname, lname, birth_year);
     if (!new_person) {
         return -1;
     }
@@ -49,6 +50,39 @@ int prepend_list(position head, char* fname, char* lname, int birth_year) {
     head->next = new_person;
 
     return EXIT_SUCCESS;
+}
+
+int insert_after(position previous, char* fname, char* lname, int birth_year) {
+    if (!previous) return -1;
+
+    position new_person = create_person(fname, lname, birth_year);
+    if (!new_person) {
+        return -1;
+    }
+
+    new_person->next = previous->next;
+    previous->next = new_person;
+
+    return EXIT_SUCCESS;
+}
+
+int insert_before(position head, position to_insert, char* lname) {
+    if (!head || !to_insert) return -1;
+
+    position prev = head;
+    position curr = head->next;
+
+    while (curr) {
+        if (strcmp(curr->lname, lname) == 0) {
+            to_insert->next = curr;
+            prev->next = to_insert;
+            return EXIT_SUCCESS;
+        }
+        prev = curr;
+        curr = curr->next;
+    }
+
+    return -1; 
 }
 
 int print_list(position first) {
@@ -61,9 +95,7 @@ int print_list(position first) {
 }
 
 int append_list(position head, char* fname, char* lname, int birth_year) {
-    position new_person = NULL;
-    new_person = create_person(fname, lname, birth_year);
-
+    position new_person = create_person(fname, lname, birth_year);
     if (!new_person) {
         return -1;
     }
@@ -76,7 +108,6 @@ int append_list(position head, char* fname, char* lname, int birth_year) {
 
 position find_last(position head) {
     position temp = head;
-
     while (temp->next) {
         temp = temp->next;
     }
@@ -85,14 +116,12 @@ position find_last(position head) {
 
 position find_by_lastname(position head, char* lname) {
     position temp = head->next;
-
     while (temp) {
         if (strcmp(temp->lname, lname) == 0) {
             return temp;
         }
         temp = temp->next;
     }
-
     return NULL; 
 }
 
@@ -113,6 +142,65 @@ int delete_by_lastname(position head, char* lname) {
     return -1; 
 }
 
+void sort_list(position head) {
+    if (!head->next) return; // Empty or single item
+
+    position i, j;
+    person* temp;
+
+    for (i = head->next; i != NULL; i = i->next) {
+        for (j = i->next; j != NULL; j = j->next) {
+            if (strcmp(i->lname, j->lname) > 0) {
+                // Swap data instead of nodes
+                temp = i;
+                strcpy(i->fname, j->fname);
+                strcpy(i->lname, j->lname);
+                i->birth_year = j->birth_year;
+
+                strcpy(j->fname, temp->fname);
+                strcpy(j->lname, temp->lname);
+                j->birth_year = temp->birth_year;
+            }
+        }
+    }
+}
+
+int write_to_file(position head, const char* filename) {
+    FILE *file = fopen(filename, "w");
+    if (!file) {
+        printf("Unable to open file for writing.\n");
+        return -1;
+    }
+
+    position temp = head->next;
+    while (temp) {
+        fprintf(file, "%s %s %d\n", temp->fname, temp->lname, temp->birth_year);
+        temp = temp->next;
+    }
+
+    fclose(file);
+    return EXIT_SUCCESS;
+}
+
+position read_from_file(const char* filename) {
+    FILE *file = fopen(filename, "r");
+    if (!file) {
+        printf("Unable to open file for reading.\n");
+        return NULL;
+    }
+
+    person head = { .fname = "", .lname = "", .birth_year = 0, .next = NULL };
+    char fname[32], lname[32];
+    int birth_year;
+
+    while (fscanf(file, "%s %s %d", fname, lname, &birth_year) == 3) {
+        append_list(&head, fname, lname, birth_year);
+    }
+
+    fclose(file);
+    return head.next; // Return the first person
+}
+
 int main() {
     person head = { .fname = "", .lname = "", .birth_year = 0, .next = NULL };
 
@@ -120,28 +208,23 @@ int main() {
     prepend_list(&head, "Ivo ", "Ivic", 1985);
     append_list(&head, "Mate", "Matic", 1975);
 
-    printf("Lista before deletion:\n");
+    printf("List before sorting:\n");
     print_list(&head);
 
-
-    position found = find_by_lastname(&head, "Peric");
-    if (found) {
-        printf("\nFound person: %s %s\n", found->fname, found->lname);
-    }
-    else {
-        printf("\nPerson not found.\n");
-    }
-
-  
-    if (delete_by_lastname(&head, "Ivic") == EXIT_SUCCESS) {
-        printf("\nPerson deleted successfully.\n");
-    }
-    else {
-        printf("\nPerson not found for deletion.\n");
-    }
-
-    printf("\nList after deletion:\n");
+    sort_list(&head);
+    printf("\nList after sorting:\n");
     print_list(&head);
+
+    write_to_file(&head, "people.txt");
+
+    // Clear the list and read from file
+    head.next = NULL;
+    position new_head = read_from_file("people.txt");
+    if (new_head) {
+        head.next = new_head;
+        printf("\nList after reading from file:\n");
+        print_list(&head);
+    }
 
     return 0;
 }
