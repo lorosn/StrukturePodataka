@@ -130,7 +130,7 @@ int delete_by_lastname(position head, char* lname) {
 }
 
 void sort_list(position head) {
-    if (!head->next) return; // Empty or single item
+    if (!head->next) return;
 
     position i, j;
     char temp_fname[32], temp_lname[32];
@@ -198,7 +198,7 @@ position read_from_file(const char* filename) {
     }
 
     fclose(file);
-    return head.next; // Return the first person
+    return head.next;
 }
 
 void free_list(position head) {
@@ -221,21 +221,21 @@ int main() {
     printf("List before inserting:\n");
     print_list(&head);
 
-    // Insert after specific person
+    
     position insert_after_pos = find_by_lastname(&head, "Peric");
     if (insert_after_pos) {
         position new_person_after = create_person("Ana", "Anic", 1992);
         insert_after(insert_after_pos, new_person_after);
     }
 
-    // Insert before specific person
+    
     position new_person_before = create_person("Luka", "Lukic", 1988);
     insert_before(&head, new_person_before, "Matic");
 
     printf("\nList after inserting:\n");
     print_list(&head);
 
-    // Oslobađanje memorije
+    
     free_list(head.next);
 
     return 0;
