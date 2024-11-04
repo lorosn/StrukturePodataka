@@ -24,6 +24,7 @@ int delete_by_lastname(position head, char* lname);
 void sort_list(position head);
 int write_to_file(position head, const char* filename);
 position read_from_file(const char* filename);
+void free_list(position head);
 
 position create_person(char* fname, char* lname, int birth_year) {
     position new_person = (position)malloc(sizeof(person));
@@ -52,16 +53,11 @@ int prepend_list(position head, char* fname, char* lname, int birth_year) {
     return EXIT_SUCCESS;
 }
 
-int insert_after(position previous, char* fname, char* lname, int birth_year) {
-    if (!previous) return -1;
+int insert_after(position previous, position to_insert) {
+    if (!previous || !to_insert) return -1;
 
-    position new_person = create_person(fname, lname, birth_year);
-    if (!new_person) {
-        return -1;
-    }
-
-    new_person->next = previous->next;
-    previous->next = new_person;
+    to_insert->next = previous->next;
+    previous->next = to_insert;
 
     return EXIT_SUCCESS;
 }
@@ -83,15 +79,6 @@ int insert_before(position head, position to_insert, char* lname) {
     }
 
     return -1; 
-}
-
-int print_list(position first) {
-    position temp = first->next;
-    while (temp) {
-        printf("First name: %s\nLast name: %s\nBirth year: %d\n", temp->fname, temp->lname, temp->birth_year);
-        temp = temp->next;
-    }
-    return EXIT_SUCCESS;
 }
 
 int append_list(position head, char* fname, char* lname, int birth_year) {
@@ -146,23 +133,36 @@ void sort_list(position head) {
     if (!head->next) return; // Empty or single item
 
     position i, j;
-    person* temp;
+    char temp_fname[32], temp_lname[32];
+    int temp_birth_year;
 
     for (i = head->next; i != NULL; i = i->next) {
         for (j = i->next; j != NULL; j = j->next) {
             if (strcmp(i->lname, j->lname) > 0) {
-                // Swap data instead of nodes
-                temp = i;
+                // Swap content of i and j
+                strcpy(temp_fname, i->fname);
+                strcpy(temp_lname, i->lname);
+                temp_birth_year = i->birth_year;
+
                 strcpy(i->fname, j->fname);
                 strcpy(i->lname, j->lname);
                 i->birth_year = j->birth_year;
 
-                strcpy(j->fname, temp->fname);
-                strcpy(j->lname, temp->lname);
-                j->birth_year = temp->birth_year;
+                strcpy(j->fname, temp_fname);
+                strcpy(j->lname, temp_lname);
+                j->birth_year = temp_birth_year;
             }
         }
     }
+}
+
+int print_list(position first) {
+    position temp = first->next;
+    while (temp) {
+        printf("First name: %s\nLast name: %s\nBirth year: %d\n", temp->fname, temp->lname, temp->birth_year);
+        temp = temp->next;
+    }
+    return EXIT_SUCCESS;
 }
 
 int write_to_file(position head, const char* filename) {
@@ -201,30 +201,42 @@ position read_from_file(const char* filename) {
     return head.next; // Return the first person
 }
 
+void free_list(position head) {
+    position temp;
+
+    while (head != NULL) {
+        temp = head;
+        head = head->next;
+        free(temp);
+    }
+}
+
 int main() {
     person head = { .fname = "", .lname = "", .birth_year = 0, .next = NULL };
 
     prepend_list(&head, "Pero", "Peric", 1990);
-    prepend_list(&head, "Ivo ", "Ivic", 1985);
+    prepend_list(&head, "Ivo", "Ivic", 1985);
     append_list(&head, "Mate", "Matic", 1975);
 
-    printf("List before sorting:\n");
+    printf("List before inserting:\n");
     print_list(&head);
 
-    sort_list(&head);
-    printf("\nList after sorting:\n");
-    print_list(&head);
-
-    write_to_file(&head, "people.txt");
-
-    // Clear the list and read from file
-    head.next = NULL;
-    position new_head = read_from_file("people.txt");
-    if (new_head) {
-        head.next = new_head;
-        printf("\nList after reading from file:\n");
-        print_list(&head);
+    // Insert after specific person
+    position insert_after_pos = find_by_lastname(&head, "Peric");
+    if (insert_after_pos) {
+        position new_person_after = create_person("Ana", "Anic", 1992);
+        insert_after(insert_after_pos, new_person_after);
     }
+
+    // Insert before specific person
+    position new_person_before = create_person("Luka", "Lukic", 1988);
+    insert_before(&head, new_person_before, "Matic");
+
+    printf("\nList after inserting:\n");
+    print_list(&head);
+
+    // Oslobađanje memorije
+    free_list(head.next);
 
     return 0;
 }
