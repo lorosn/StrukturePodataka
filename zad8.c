@@ -1,221 +1,180 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include<stdio.h>
 #include<stdlib.h>
-#include<string.h>
 
-
-
-#define MAX_DIR_LENGTH 256
-
-typedef struct dir* Position;
-typedef struct stack* StackPosition;
-typedef struct dir {
-	char name[MAX_DIR_LENGTH];
-	Position sibling;
-	Position child;
-}Dir;
-
-typedef struct stack {
-	Position data;
-	StackPosition next;
-} Stack;
-Position AllocateMemoryForDirectory();
-StackPosition AllocateMemoryForStack();
-int PushStack(Position, StackPosition);
-Position PopStack(StackPosition);
-Position MakeDirectory(Position, char*);
-Position ChangeDirectory(Position, StackPosition, char*);
-Position ChangeToPreviousDirectory(StackPosition);
-int PrintDirectory(Position);
-int Path(Position, StackPosition);
-int CommandPrompt(Position current, StackPosition stackHead);
-void Remove(Position);
+typedef struct treeNode* treePointer;
+struct treeNode
+{
+	int data;
+	treePointer left;
+	treePointer right;
+};
+treePointer AllocateMemory(int);
+treePointer InsertElement(int, treePointer);
+int InOrderPrint(treePointer);
+int PostOrderPrint(treePointer);
+int PreOrderPrint(treePointer);
+treePointer DeleteElement(int, treePointer);
+treePointer FindMin(treePointer);
+treePointer FindElement(int, treePointer);
 int main()
 {
-	Dir C;
-	C.sibling = NULL;
-	C.child = NULL;
-	strcpy(C.name, "C:");
+	treePointer root = NULL;
+	root = InsertElement(2, root);
+	root = InsertElement(4, root);
+	root = InsertElement(9, root);
+	root = InsertElement(1, root);
+	root = InsertElement(11, root);
+	root = InsertElement(7, root);
+	root = DeleteElement(2, root);
+	int choice = 0, element;
+	treePointer temp = NULL;
 
-	Stack stackHead;
-	stackHead.data = NULL;
-	stackHead.next = NULL;
+	do
+	{
+		printf("Odaberi:\n");
+		printf("1 - unos novog elementa u stablo\n");
+		printf("2 - ispis inorder stabla\n");
+		printf("3 - ispis postorder stabla\n");
+		printf("4 - ispis preorder stabla\n");
+		printf("5 - trazenje elementa stabla\n");
+		printf("6 - brisanje elementa iz stabla\n");
+		printf("7 - izlaz\n");
 
-	PushStack(&C, &stackHead);
-	CommandPrompt(&C, &stackHead);
-
+		scanf("%d", &choice);
+		system("cls");
+		switch (choice)
+		{
+		case 1:
+			printf("Unesi element koji zelis unijeti u stablo:\n");
+			scanf("%d", &element);
+			root = InsertElement(element, root);
+			break;
+		case 2:
+			InOrderPrint(root);
+			break;
+		case 3:
+			PostOrderPrint(root);
+			break;
+		case 4:
+			PreOrderPrint(root);
+			break;
+		case 5:
+			printf("Unesi element koji trazis u stablu:\n");
+			scanf("%d", &element);
+			temp = FindElement(element, root);
+			if (temp)
+				printf("Element %d se nalazi na adresi %d\n", temp->data, temp);
+			break;
+		case 6:
+			printf("Unesi element koji brises iz stabla:\n");
+			scanf("%d", &element);
+			root = DeleteElement(element, root);
+		case 7:
+			break;
+		default:
+			printf("Pogresan unos!\n");
+		}
+	} while (choice != '7');
 	return 0;
 }
-Position PopStack(StackPosition stackHead)
+treePointer AllocateMemory(int element)
 {
-	StackPosition tempStackElement = stackHead->next, prev = stackHead->next;
-	if (!tempStackElement->next)
-		return NULL;
-	while (tempStackElement->next)
+	treePointer newNode = (treePointer)malloc(sizeof(struct treeNode));
+	if (!newNode)
 	{
-		prev = tempStackElement;
-		tempStackElement = tempStackElement->next;
+		printf("Problem s alokacijom memorije!\n");
+		return newNode;
 	}
-		Position directory = tempStackElement->data;
-		prev->next = tempStackElement->next;
-		free(tempStackElement);
-		return directory;
+	newNode->data = element;
+	newNode->left = NULL;
+	newNode->right = NULL;
+	return newNode;
+
 }
-int PushStack(Position current, StackPosition stackHead)
+treePointer InsertElement(int element, treePointer root)
 {
-	StackPosition newStackElement;
-	StackPosition tempStackElement = stackHead;
-	if (newStackElement = AllocateMemoryForStack()) 
-	{
-		while (tempStackElement->next)
-			tempStackElement = tempStackElement->next;
-		newStackElement->next = tempStackElement->next;
-		tempStackElement->next = newStackElement;
-		newStackElement->data = current;
-		return 0;
-	}
-	else
-		return 1;
+	if (!root)
+		return AllocateMemory(element);
+	else if (element < root->data)
+		root->left = InsertElement(element, root->left);
+	else if (element > root->data)
+		root->right = InsertElement(element, root->right);
+	return root;
 }
-int PrintDirectory(Position current)
+int InOrderPrint(treePointer root)
 {
-	if (!current->child)
-		printf("Directory is empty!\n");
-	else
+	if (root)
 	{
-		current = current->child;
-		while (current)
-		{
-			printf(" %s\n", current->name);
-			current = current->sibling;
-		}
+		InOrderPrint(root->left);
+		printf("%d\n", root->data);
+		InOrderPrint(root->right);
 	}
 	return 0;
 }
-Position ChangeToPreviousDirectory(StackPosition stackHead)
+int PostOrderPrint(treePointer root)
 {
-	return PopStack(stackHead);
-}
-Position ChangeDirectory(Position current, StackPosition stackHead, char* name)
-{
-	if (!current->child)
+	if (root)
 	{
-		//printf("Directory is empty!\n");
-		return current;
+		PostOrderPrint(root->left);
+		PostOrderPrint(root->right);
+		printf("%d\n", root->data);
 	}
+	return 0;
+}
+int PreOrderPrint(treePointer root)
+{
+	if (root)
+	{
+		printf("%d\n", root->data);
+		PreOrderPrint(root->left);
+		PreOrderPrint(root->right);
+	}
+	return 0;
+}
+treePointer DeleteElement(int element, treePointer root)
+{
+	treePointer temp;
+	if (!root)
+		return root;
+	else if (element < root->data)
+		root->left = DeleteElement(element, root->left);
+	else if (element > root->data)
+		root->right = DeleteElement(element, root->right);
 	else
 	{
-		Position parent = current;
-		Position finderOfWantedDirectory = current->child;
-		while (finderOfWantedDirectory)
+		if (root->left && root->right)
 		{
-			if (!strcmp(finderOfWantedDirectory->name, name))
-			{
-				PushStack(finderOfWantedDirectory, stackHead);
-				return finderOfWantedDirectory;
-			}
-			finderOfWantedDirectory = finderOfWantedDirectory->sibling;
-		}
-		//printf("That directory does not exist!\n");
-		return parent;
-	}
-}
-Position MakeDirectory(Position current, char* name)
-{
-	Position newDirectory;
-	newDirectory = AllocateMemoryForDirectory();
-
-	strcpy(newDirectory->name, name);
-		if (!current->child)
-		{
-			current->child = newDirectory;
+			temp = FindMin(root->right);
+			root->data = temp->data;
+			root->right = DeleteElement(temp->data, root->right);
 		}
 		else
 		{
-			Position currentChild = current->child;
-			while (currentChild->sibling)
-				currentChild = currentChild->sibling;
-			currentChild->sibling = newDirectory;
+			temp = root;
+			if (!root->left)
+				root = root->right;
+			else if (!root->right)
+				root = root->left;
+			free(temp);
 		}
-		return current;
-}
-StackPosition AllocateMemoryForStack()
-{
-	StackPosition newStackElement = (StackPosition)malloc(sizeof(Dir));
-	if (!newStackElement)
-	{
-		printf("Can not allocate memory!\n");
 	}
-	return newStackElement;
+	return root;
 }
-Position AllocateMemoryForDirectory()
+treePointer FindMin(treePointer root)
 {
-	Position newDirectory = (Position)malloc(sizeof(Dir));
-	if (!newDirectory)
-	{
-		printf("Can not allocate memory!\n");
-	}
-	newDirectory->child = NULL;
-	newDirectory->sibling = NULL;
-	return newDirectory;	
+	while (root->left)
+		root = root->left;
+	return root;
 }
-void Remove(Position current)
+treePointer FindElement(int element, treePointer root)
 {
-	if (!current)
-		return;
-	remove(current->sibling);
-	remove(current->child);
-	//free(current);
-}
-int Path(Position current, StackPosition stackHead)
-{
-	char stringToPrint[MAX_DIR_LENGTH] = "";
-	//strcat(stringToPrint, current->name);
-	while (stackHead)
-	{
-			strcat(stringToPrint, stackHead->data->name);
-			strcat(stringToPrint, "\\");
-			stackHead = stackHead->next;
-	}
-	strcat(stringToPrint, ">");
-	printf("%s ", stringToPrint);
-	return 0;
-}
-int CommandPrompt(Position current, StackPosition stackHead)
-{
-	Position C = current;
-	char userInput[MAX_DIR_LENGTH];
-	char command[5];
-	char directoryName[MAX_DIR_LENGTH];
-	Path(current, stackHead->next);
-	do {
-		fgets(userInput, MAX_DIR_LENGTH, stdin);
-		sscanf(userInput, "%s %s", command, directoryName);
-		if (!strcmp(command, "md"))
-		{
-			current = MakeDirectory(current, directoryName);
-			Path(current, stackHead->next);
-		}
-		else if (!strcmp(command, "cd"))
-		{
-			current = ChangeDirectory(current, stackHead, directoryName);
-			Path(current, stackHead->next);
-		}
-		else if (!strcmp(command, "cd.."))
-		{
-			if (current = ChangeToPreviousDirectory(stackHead) == NULL)
-				current = C;
-			Path(current, stackHead->next);
-		}
-		else if (!strcmp(command, "dir"))
-		{
-			PrintDirectory(current);
-			Path(current, stackHead->next);
-		}
-		else if (!strcmp(command, "exit"))
-			Remove(current);
-		else
-			printf("That's not an option!");
-	} while (strcmp(command, "exit"));
-	return 0;
+	if (!root)
+		return root;
+	else if (element < root->data)
+		return FindElement(element, root->left);
+	else if (element > root->data)
+		return FindElement(element, root->right);
+	else
+		return root;
 }
